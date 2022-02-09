@@ -3,29 +3,44 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	"log"
+	"net/http"
+	"time"
 )
 
 var db *sql.DB
 
 type Album struct {
-	ID     int64
+	ID     int
 	Title  string
 	Artist string
 	Price  float32
 }
 
 func main() {
-	// Capture connection properties.
-	cfg := mysql.Config{
-		User:                 "mike",
-		Passwd:               "password",
-		Net:                  "tcp",
-		Addr:                 "127.0.0.1:3306",
-		DBName:               "album_store",
-		AllowNativePasswords: true,
+	var dbBuilder = DbBuilder
+	dbBuilder.withConnections(23).withAddress("127.0.0.1:3306").withUser("mike").withPass("password").make()
+
+	var handler Handler
+
+	s := http.Server{
+		Addr:           ":8080",
+		Handler:        &handler,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
 	}
+	log.Fatal(s.ListenAndServe())
+
+	// Capture connection properties.
+	//cfg := mysql.Config{
+	//	User:                 "mike",
+	//	Passwd:               "password",
+	//	Net:                  "tcp",
+	//	Addr:                 "127.0.0.1:3306",
+	//	DBName:               "album_store",
+	//	AllowNativePasswords: true,
+	//}
 	// Get a database handle.
 	var err error
 	db, err = sql.Open("mysql", cfg.FormatDSN())
@@ -51,16 +66,6 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Album found: %v\n", alb)
-
-	albID, err := addAlbum(Album{
-		Title:  "The Modern Sound of Betty Carter",
-		Artist: "Betty Carter",
-		Price:  49.99,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("ID of added album: %v\n", albID)
 }
 
 // albumsByArtist queries for albums that have the specified artist name.

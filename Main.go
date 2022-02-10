@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 )
@@ -17,17 +18,21 @@ type Album struct {
 }
 
 func main() {
+
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	builder := &DbBuilder{}
-	dbOrigin := builder.withConnections(23).
+	dbOrigin := builder.withConnections(123).
 		withAddr("127.0.0.1:3306").
 		withName("album_store").
 		withUser("mike").
 		withPasswd("password").
 		build()
 
-	println(dbOrigin.user)
-
-	dbOrigin.init()
+	err := dbOrigin.init()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	start := time.Now()
 	for z := 0; z < 1000; z++ {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"log"
@@ -14,11 +15,15 @@ type DbOrigin struct {
 	user, passwd, addr, name string
 }
 
-func (d *DbOrigin) init() {
+func (d *DbOrigin) init() error {
+	if d.numberOfConnections > 1000 {
+		return errors.New("init: too many open connections?")
+	}
 	for z := 0; len(d.collection) < d.numberOfConnections; z++ {
 		db := d.createConnection()
 		d.collection = append(d.collection, db)
 	}
+	return nil
 }
 
 func (d *DbOrigin) getConnection() *sql.DB {
